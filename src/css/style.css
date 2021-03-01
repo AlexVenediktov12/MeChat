@@ -1,0 +1,11 @@
+#sendButton {
+ -fx-background-color: grey;
+
+}
+
+#sendButton: hover {
+ -fx-background-color: darkGrey;
+  -fx-text-fill: green;
+  -fx-font-weight: bold;
+
+}
