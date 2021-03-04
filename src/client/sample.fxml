@@ -17,6 +17,6 @@
 <HBox>
     <TextField fx:id = "textField" promptText="input message" HBox.hgrow="ALWAYS"
                onAction="#sendMsg"/>
-    <Button text="send" onAction="#sendMsg"/>
+    <Button fx:id="sendButton" text="send" onAction="#sendMsg"/>
 </HBox>
 </VBox>

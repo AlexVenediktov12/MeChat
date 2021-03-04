@@ -3,6 +3,7 @@ package client;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
@@ -19,9 +20,12 @@ public class Controller implements Initializable {
     public TextArea textArea;
     @FXML
     public TextField textField;
+    @FXML
+    public Button sendButton;
 
     private final String IP_ADDRESS = "localhost";
     private final int PORT = 8189;
+
 
     private Socket socket;
     DataInputStream in;
