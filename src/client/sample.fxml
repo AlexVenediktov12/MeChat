@@ -15,7 +15,7 @@
 <TextArea fx:id = "textArea" VBox.vgrow="ALWAYS" editable="false"/>
 
 <HBox>
-    <TextField fx:id = "textField" promptText="input messge" HBox.hgrow="ALWAYS"
+    <TextField fx:id = "textField" promptText="input message" HBox.hgrow="ALWAYS"
                onAction="#sendMsg"/>
     <Button text="send" onAction="#sendMsg"/>
 </HBox>
