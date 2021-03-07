@@ -1,17 +1,21 @@
 package client;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -21,7 +25,13 @@ public class Controller implements Initializable {
     @FXML
     public TextField textField;
     @FXML
-    public Button sendButton;
+    public HBox authPanel;
+    @FXML
+    public TextField loginField;
+    @FXML
+    public PasswordField passwordField;
+    @FXML
+    public HBox msgPanel;
 
     private final String IP_ADDRESS = "localhost";
     private final int PORT = 8189;
@@ -31,8 +41,54 @@ public class Controller implements Initializable {
     DataInputStream in;
     DataOutputStream out;
 
+    private boolean authenticated;
+    private String nickName;
+    private final String TITLE = "VeChat";
+
+    public void setAuthenticated(boolean authenticated) {
+        this.authenticated = authenticated;
+        authPanel.setVisible(!authenticated);
+        authPanel.setManaged(!authenticated);
+        msgPanel.setVisible(authenticated);
+        msgPanel.setManaged(authenticated);
+
+        if (!authenticated) {
+            nickName = "";
+        }
+        setTitle(nickName);
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        setAuthenticated(false);
+    }
+
+
+    public void sendMsg(ActionEvent actionEvent) {
+        try {
+            out.writeUTF(textField.getText());
+            textField.clear();
+            textField.requestFocus();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void tryToAuth(ActionEvent actionEvent) {
+        if (socket == null || socket.isClosed()) {
+            connect();
+        }
+        try {
+            out.writeUTF(String.format("/auth %s %s", loginField.getText().trim().toLowerCase(),
+                    passwordField.getText().trim()));
+            passwordField.clear();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void connect() {
         try {
             socket = new Socket(IP_ADDRESS, PORT);
             in = new DataInputStream(socket.getInputStream());
@@ -42,21 +98,30 @@ public class Controller implements Initializable {
                 @Override
                 public void run() {
                     try {
+                        // цикл аутентификации
                         while (true) {
-
                             String str = in.readUTF();
+                            if (str.startsWith("/authok")) {
+                                nickName = str.split(" ", 2)[1];
+                                setAuthenticated(true);
+                                break;
+                            }
+                            textArea.appendText(str + "\n");
+                        }
 
+                        // цикл работы
+                        while (true) {
+                            String str = in.readUTF();
                             if (str.equals("/end")) {
                                 break;
                             }
-
-//                        System.out.println("Сервер " + str);
                             textArea.appendText(str + "\n");
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                     } finally {
                         System.out.println("Мы отключились от сервера");
+                        setAuthenticated(false);
                         try {
                             socket.close();
                         } catch (IOException e) {
@@ -71,14 +136,9 @@ public class Controller implements Initializable {
         }
     }
 
-
-    public void sendMsg(ActionEvent actionEvent) {
-        try {
-            out.writeUTF(textField.getText());
-            textField.clear();
-            textField.requestFocus();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void setTitle(String nick) {
+        Platform.runLater(() -> {
+            ((Stage) textField.getScene().getWindow()).setTitle(TITLE + " " + nick);
+        });
     }
 }

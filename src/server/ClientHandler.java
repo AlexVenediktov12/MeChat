@@ -10,6 +10,7 @@ public class ClientHandler {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private String nickName;
 
     public ClientHandler(Server server, Socket socket) {
 
@@ -19,35 +20,49 @@ public class ClientHandler {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (true) {
-                            String str = in.readUTF();
-
-                            if (str.equals("/end")) {
-                                System.out.println("Клиент отключился");
+            new Thread(() -> {
+                try {
+                    // цикл аутентифиукаии
+                    while (true) {
+                        String str = in.readUTF();
+                        if (str.startsWith("/auth")) {
+                            String[] token = str.split("\\s");
+                            String newNick = server.getAuthService()
+                                    .getNickByLoginAndPassword(token[1], token[2]);
+                            if (newNick != null) {
+                                nickName = newNick;
+                                sendMsg("/authok " + nickName);
+                                server.subscribe(this);
+                                System.out.println("Клиент " + nickName + " подключился");
                                 break;
+                            } else {
+                                sendMsg("Неверный логин / пароль");
                             }
+                        }
+                    }
 
+                    //цикл работы
+                    while (true) {
+                        String str = in.readUTF();
+                        if (str.equals("/end")) {
+                            break;
+                        }
 //                            System.out.println("Клиент " + str);
 //                            out.writeUTF("echo: " + str);
-                            server.broadcastMsg(str);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        System.out.println("Клиент отключился");
-                        try {
-                            socket.close();
-                        } catch (IOException ioException) {
-                            ioException.printStackTrace();
-                        }
+                        server.broadcastMsg(this, str);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    System.out.println("Клиент отключился");
+                    server.unsubscribe(this);
+                    try {
+                        socket.close();
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
                     }
                 }
             }).start();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -60,5 +75,9 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getNickName(){
+        return nickName;
     }
 }

@@ -1,9 +1,9 @@
-#sendButton {
+#send {
  -fx-background-color: grey;
 
 }
 
-#sendButton: hover {
+#send: hover {
  -fx-background-color: darkGrey;
   -fx-text-fill: green;
   -fx-font-weight: bold;
